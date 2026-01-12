@@ -1,0 +1,21 @@
+{
+  "name": "mid-world-logistics",
+  "version": "1.0.0",
+  "description": "**Distributed Systems R&D Sandbox**",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.966.0",
+    "@aws-sdk/client-eventbridge": "^3.966.0",
+    "@aws-sdk/lib-dynamodb": "^3.966.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.0.6",
+    "typescript": "^5.9.3"
+  }
+}
