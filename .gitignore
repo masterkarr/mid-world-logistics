@@ -1,0 +1,10 @@
+node_modules/ 
+cdk.out/ 
+.cdk.staging/ 
+.env 
+.DS_Store 
+dist/ 
+coverage/ 
+test-reports/ 
+npm-debug.log 
+yarn-error.log 

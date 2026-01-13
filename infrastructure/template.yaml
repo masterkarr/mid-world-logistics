@@ -1,0 +1,349 @@
+Resources:
+  WaystationTable6C5035F6:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: partitionKey
+          AttributeType: S
+        - AttributeName: sortKey
+          AttributeType: S
+      BillingMode: PAY_PER_REQUEST
+      KeySchema:
+        - AttributeName: partitionKey
+          KeyType: HASH
+        - AttributeName: sortKey
+          KeyType: RANGE
+      TableName: mid-world-waystation
+    UpdateReplacePolicy: Delete
+    DeletionPolicy: Delete
+    Metadata:
+      aws:cdk:path: InfrastructureStack/WaystationTable/Resource
+  TheBeamAF97063B:
+    Type: AWS::Events::EventBus
+    Properties:
+      Name: mid-world-logistics-bus
+    Metadata:
+      aws:cdk:path: InfrastructureStack/TheBeam/Resource
+  InventoryFunctionServiceRole4B011DDA:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+        Version: "2012-10-17"
+      ManagedPolicyArns:
+        - Fn::Join:
+            - ""
+            - - "arn:"
+              - Ref: AWS::Partition
+              - :iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+    Metadata:
+      aws:cdk:path: InfrastructureStack/InventoryFunction/ServiceRole/Resource
+  InventoryFunctionServiceRoleDefaultPolicyC8FEE94F:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyDocument:
+        Statement:
+          - Action:
+              - dynamodb:BatchGetItem
+              - dynamodb:BatchWriteItem
+              - dynamodb:ConditionCheckItem
+              - dynamodb:DeleteItem
+              - dynamodb:DescribeTable
+              - dynamodb:GetItem
+              - dynamodb:GetRecords
+              - dynamodb:GetShardIterator
+              - dynamodb:PutItem
+              - dynamodb:Query
+              - dynamodb:Scan
+              - dynamodb:UpdateItem
+            Effect: Allow
+            Resource:
+              Fn::GetAtt:
+                - WaystationTable6C5035F6
+                - Arn
+          - Action: events:PutEvents
+            Effect: Allow
+            Resource:
+              Fn::GetAtt:
+                - TheBeamAF97063B
+                - Arn
+        Version: "2012-10-17"
+      PolicyName: InventoryFunctionServiceRoleDefaultPolicyC8FEE94F
+      Roles:
+        - Ref: InventoryFunctionServiceRole4B011DDA
+    Metadata:
+      aws:cdk:path: InfrastructureStack/InventoryFunction/ServiceRole/DefaultPolicy/Resource
+  InventoryFunction7E1DD6ED:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        S3Bucket:
+          Fn::Sub: cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}
+        S3Key: e367162a28389110000ba9df7eb231444dd092d5574989f2f50107896d29f902.zip
+      Environment:
+        Variables:
+          TABLE_NAME:
+            Ref: WaystationTable6C5035F6
+          EVENT_BUS_NAME:
+            Ref: TheBeamAF97063B
+      Handler: index.handler
+      Role:
+        Fn::GetAtt:
+          - InventoryFunctionServiceRole4B011DDA
+          - Arn
+      Runtime: nodejs20.x
+    DependsOn:
+      - InventoryFunctionServiceRoleDefaultPolicyC8FEE94F
+      - InventoryFunctionServiceRole4B011DDA
+    Metadata:
+      aws:cdk:path: InfrastructureStack/InventoryFunction/Resource
+      aws:asset:path: asset.e367162a28389110000ba9df7eb231444dd092d5574989f2f50107896d29f902
+      aws:asset:is-bundled: true
+      aws:asset:property: Code
+  InventoryFunctionLogGroup3C0C1F48:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName:
+        Fn::Join:
+          - ""
+          - - /aws/lambda/
+            - Ref: InventoryFunction7E1DD6ED
+      RetentionInDays: 731
+    UpdateReplacePolicy: Retain
+    DeletionPolicy: Retain
+    Metadata:
+      aws:cdk:path: InfrastructureStack/InventoryFunction/LogGroup/Resource
+  TransportFunctionServiceRoleAA675D23:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+        Version: "2012-10-17"
+      ManagedPolicyArns:
+        - Fn::Join:
+            - ""
+            - - "arn:"
+              - Ref: AWS::Partition
+              - :iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+    Metadata:
+      aws:cdk:path: InfrastructureStack/TransportFunction/ServiceRole/Resource
+  TransportFunctionServiceRoleDefaultPolicy788B2D72:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyDocument:
+        Statement:
+          - Action: events:PutEvents
+            Effect: Allow
+            Resource:
+              Fn::GetAtt:
+                - TheBeamAF97063B
+                - Arn
+        Version: "2012-10-17"
+      PolicyName: TransportFunctionServiceRoleDefaultPolicy788B2D72
+      Roles:
+        - Ref: TransportFunctionServiceRoleAA675D23
+    Metadata:
+      aws:cdk:path: InfrastructureStack/TransportFunction/ServiceRole/DefaultPolicy/Resource
+  TransportFunction8975ADC3:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        S3Bucket:
+          Fn::Sub: cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}
+        S3Key: 7ecc77636deefb31954ea2e6aadf6d2c361a2943535a678d65f46a8de5e1f503.zip
+      Environment:
+        Variables:
+          EVENT_BUS_NAME:
+            Ref: TheBeamAF97063B
+      Handler: index.handler
+      Role:
+        Fn::GetAtt:
+          - TransportFunctionServiceRoleAA675D23
+          - Arn
+      Runtime: nodejs20.x
+    DependsOn:
+      - TransportFunctionServiceRoleDefaultPolicy788B2D72
+      - TransportFunctionServiceRoleAA675D23
+    Metadata:
+      aws:cdk:path: InfrastructureStack/TransportFunction/Resource
+      aws:asset:path: asset.7ecc77636deefb31954ea2e6aadf6d2c361a2943535a678d65f46a8de5e1f503
+      aws:asset:is-bundled: true
+      aws:asset:property: Code
+  TransportFunctionLogGroup05DE2A95:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName:
+        Fn::Join:
+          - ""
+          - - /aws/lambda/
+            - Ref: TransportFunction8975ADC3
+      RetentionInDays: 731
+    UpdateReplacePolicy: Retain
+    DeletionPolicy: Retain
+    Metadata:
+      aws:cdk:path: InfrastructureStack/TransportFunction/LogGroup/Resource
+  CargoStoredRule8E866A02:
+    Type: AWS::Events::Rule
+    Properties:
+      EventBusName:
+        Ref: TheBeamAF97063B
+      EventPattern:
+        source:
+          - mid-world.inventory
+        detail-type:
+          - CargoStored
+      State: ENABLED
+      Targets:
+        - Arn:
+            Fn::GetAtt:
+              - TransportFunction8975ADC3
+              - Arn
+          Id: Target0
+    Metadata:
+      aws:cdk:path: InfrastructureStack/CargoStoredRule/Resource
+  CargoStoredRuleAllowEventRuleInfrastructureStackTransportFunction20CDAE8CE7095A45:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName:
+        Fn::GetAtt:
+          - TransportFunction8975ADC3
+          - Arn
+      Principal: events.amazonaws.com
+      SourceArn:
+        Fn::GetAtt:
+          - CargoStoredRule8E866A02
+          - Arn
+    Metadata:
+      aws:cdk:path: InfrastructureStack/CargoStoredRule/AllowEventRuleInfrastructureStackTransportFunction20CDAE8C
+  CDKMetadata:
+    Type: AWS::CDK::Metadata
+    Properties:
+      Analytics: v2:deflate64:H4sIAAAAAAAA/61U0WrbMBT9luoxKFqb9ClvTfHG2NZlTvYwjAmKdesqkaUgXacYoX8fkp2UEuhKOrC50jk+8tGxridsMr1lN1f82Y0rsRsruWF+ibzaUf7s1l50mjdGbJhf8Y2CwhOM9YE3QGZkRCjZc4sSpdHfoCMzT/QLhd0+DpckUOKMxbef2EilpK5/GBGhxd2f9SLL13n263e2XBFKLDTmwNXCKFl1ZEYEOLSmI6Gk94862QsUDqDRMZ/FOm9d4Xv6OKd5m3YBw3zwkaYLjghWR4vOtLY6mhSAXKpVb3VEQqCecCGyV5riH6JyUK24rQHj86HsrUVHgSrebARfayNg69hDKp9bXcVkC09sq1GeYgONthvGT1wLBfbEHKQ1ugGNA1L1eY5IoL6/Ll7sI9ozI5e7KKnkDfO5SV8yZmoWVupK7l9OR4o3Jo7Iq6evWkkNJ46MyDvIt9f9CHuZp/6wGAW0xyN6EqxMZM7WOYeFWCJHiGm6V4bfDf+v16b99FsJ1E3X3DlAx+5ioW7K5m21A5xzB0U5tAfz94/62BVJDraRzkmjA1Wmdsx/N/UXa9p94YkahqefVXRyDiYfR1kINIe+kVO+w13SZGuJvJa6joKfLe5bDDQ2LNu6T4fJNbu5ZddXWyfleDjbLO/rX0OEXh9mBQAA
+    Metadata:
+      aws:cdk:path: InfrastructureStack/CDKMetadata/Default
+    Condition: CDKMetadataAvailable
+Outputs:
+  InventoryFunctionArn:
+    Value:
+      Fn::GetAtt:
+        - InventoryFunction7E1DD6ED
+        - Arn
+  BeamEventBusArn:
+    Value:
+      Fn::GetAtt:
+        - TheBeamAF97063B
+        - Arn
+Conditions:
+  CDKMetadataAvailable:
+    Fn::Or:
+      - Fn::Or:
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - af-south-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-east-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-northeast-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-northeast-2
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-northeast-3
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-south-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-south-2
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-southeast-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-southeast-2
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-southeast-3
+      - Fn::Or:
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-southeast-4
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ca-central-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ca-west-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - cn-north-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - cn-northwest-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - eu-central-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - eu-central-2
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - eu-north-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - eu-south-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - eu-south-2
+      - Fn::Or:
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - eu-west-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - eu-west-2
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - eu-west-3
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - il-central-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - me-central-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - me-south-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - sa-east-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - us-east-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - us-east-2
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - us-west-1
+      - Fn::Equals:
+          - Ref: AWS::Region
+          - us-west-2
+Parameters:
+  BootstrapVersion:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /cdk-bootstrap/hnb659fds/version
+    Description: Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]
+
