@@ -83,8 +83,8 @@ npm test
 ### 5. Live Smoke Test
 You can verify the live API using curl. Replace <YOUR_API_URL> with the ApiUrl output from Step 3.
 
-* **Procedure: Execute the command listed in SOP-001: Manual Smoke Test.**
-* **Verification: Confirm the item appears in DynamoDB and the TransportFunction logs show activity.**
+* **Procedure:** Execute the command listed in [SOP-001: Manual Smoke Test](./RUNBOOK.md#sop-001-manual-smoke-test).
+* **Verification:** Confirm the item appears in DynamoDB and the `TransportFunction` logs show activity.
 ```bash
 curl -X POST <YOUR_API_URL>/cargo \
   -H "Content-Type: application/json" \
