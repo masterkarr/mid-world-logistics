@@ -1,3 +1,7 @@
+![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/masterkarr/mid-world-logistics/pipeline.yml)
+![GitHub top language](https://img.shields.io/github/languages/top/masterkarr/mid-world-logistics)
+![GitHub security check](https://img.shields.io/github/checks-status/masterkarr/mid-world-logistics/main)
+
 # Mid-World Logistics
 
 **Distributed Systems R&D Sandbox**
