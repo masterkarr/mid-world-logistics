@@ -26,6 +26,12 @@ The system borrows nomenclature from Stephen King's *The Dark Tower* series to m
 * **Waystations:** Nodes in the network where inventory state is reconciled (DynamoDB).
 * **The Beam:** The central event bus governing data flow between disparate services (EventBridge).
 
+## 📚 Key Documentation
+
+* **[System Architecture](./ARCHITECTURE.md):** Detailed visual diagrams (Mermaid.js) of the event-driven workflow and infrastructure components.
+* **[Security Policy](./SECURITY.md):** Vulnerability reporting guidelines and supported version information.
+* **[Operational Runbook](./RUNBOOK.md):** Incident response protocols, severity definitions, and Standard Operating Procedures (SOPs).
+
 ## 🚀 Getting Started
 
 Follow these steps to deploy the architecture from a fresh clone.
