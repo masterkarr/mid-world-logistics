@@ -4,7 +4,10 @@ import * as targets from 'aws-cdk-lib/aws-events-targets';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as nodejs from 'aws-cdk-lib/aws-lambda-nodejs';
-import * as sqs from 'aws-cdk-lib/aws-sqs'; // <-- NEW: For the DLQ
+import * as sqs from 'aws-cdk-lib/aws-sqs';
+import * as apigw from 'aws-cdk-lib/aws-apigatewayv2'; // <-- NEW: API Gateway
+import { HttpLambdaIntegration } from 'aws-cdk-lib/aws-apigatewayv2-integrations'; // <-- NEW: Connects API to Lambda
+import { CfnStage } from 'aws-cdk-lib/aws-apigatewayv2'; // <-- NEW: For throttling config
 import * as path from 'path';
 import { Construct } from 'constructs';
 
@@ -13,10 +16,9 @@ export class InfrastructureStack extends cdk.Stack {
     super(scope, id, props);
 
     // 1. THE SAFETY NET (Reliability)
-    // If the Transport Service fails 3 times, the event goes here.
     const deadLetterQueue = new sqs.Queue(this, 'TransportDLQ', {
       queueName: 'mid-world-transport-dlq',
-      retentionPeriod: cdk.Duration.days(14), // Keep failed messages for 2 weeks
+      retentionPeriod: cdk.Duration.days(14),
     });
 
     // 2. THE STORAGE
@@ -33,14 +35,16 @@ export class InfrastructureStack extends cdk.Stack {
       eventBusName: 'mid-world-logistics-bus',
     });
 
-    // 4. THE COMPUTE (With Observability)
+    // 4. THE COMPUTE (With Observability & Safety Rails)
     
     // Service A: Inventory
     const inventoryFunction = new nodejs.NodejsFunction(this, 'InventoryFunction', {
       runtime: lambda.Runtime.NODEJS_20_X,
       entry: path.join(__dirname, '../../src/inventory/index.ts'),
       handler: 'handler',
-      tracing: lambda.Tracing.ACTIVE, // <-- NEW: Enable X-Ray Tracing
+      tracing: lambda.Tracing.ACTIVE,
+      // 🛡️ SAFETY RAIL #1: Prevent infinite scaling
+      reservedConcurrentExecutions: 5, 
       environment: {
         TABLE_NAME: waystationTable.tableName,
         EVENT_BUS_NAME: theBeamEventBus.eventBusName,
@@ -52,7 +56,7 @@ export class InfrastructureStack extends cdk.Stack {
       runtime: lambda.Runtime.NODEJS_20_X,
       entry: path.join(__dirname, '../../src/transport/index.ts'),
       handler: 'handler',
-      tracing: lambda.Tracing.ACTIVE, // <-- NEW: Enable X-Ray Tracing
+      tracing: lambda.Tracing.ACTIVE,
       environment: {
         EVENT_BUS_NAME: theBeamEventBus.eventBusName,
       },
@@ -72,13 +76,35 @@ export class InfrastructureStack extends cdk.Stack {
       },
     });
 
-    // Connect the rule to Lambda, but attach the DLQ for failures
     cargoStoredRule.addTarget(new targets.LambdaFunction(transportFunction, {
-      deadLetterQueue: deadLetterQueue, // <-- NEW: If Lambda fails, send here
-      retryAttempts: 2, // Retry twice before giving up
+      deadLetterQueue: deadLetterQueue,
+      retryAttempts: 2,
     }));
+
+    // 7. THE FRONT DOOR (With Throttling)
+    const api = new apigw.HttpApi(this, 'MidWorldApi', {
+      description: 'Public endpoint for Mid-World Logistics',
+    });
+
+    // Add the route: POST /cargo -> InventoryFunction
+    api.addRoutes({
+      path: '/cargo',
+      methods: [apigw.HttpMethod.POST],
+      integration: new HttpLambdaIntegration('InventoryIntegration', inventoryFunction),
+    });
+
+    // 🛡️ SAFETY RAIL #2: API Throttling
+    // We cast to CfnStage to access the low-level properties
+    if (api.defaultStage && api.defaultStage.node.defaultChild) {
+      const stage = api.defaultStage.node.defaultChild as CfnStage;
+      stage.defaultRouteSettings = {
+        throttlingRateLimit: 10,  // Max 10 requests per second
+        throttlingBurstLimit: 5,  // Max 5 concurrent requests in a burst
+      };
+    }
     
-    // Output the DLQ URL so we can check it later
+    // Outputs
     new cdk.CfnOutput(this, 'DLQUrl', { value: deadLetterQueue.queueUrl });
+    new cdk.CfnOutput(this, 'ApiUrl', { value: api.url! });
   }
 }
