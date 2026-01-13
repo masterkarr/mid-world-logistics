@@ -25,3 +25,50 @@ The system borrows nomenclature from Stephen King's *The Dark Tower* series to m
 * **Cargo:** Discrete assets requiring tracking across boundaries.
 * **Waystations:** Nodes in the network where inventory state is reconciled (DynamoDB).
 * **The Beam:** The central event bus governing data flow between disparate services (EventBridge).
+
+## 🚀 Getting Started
+
+Follow these steps to deploy the architecture from a fresh clone.
+
+### Prerequisites
+* **Node.js** (v18 or newer)
+* **AWS CLI** (Configured with `aws configure`)
+* **AWS CDK** (`npm install -g aws-cdk`)
+
+### 1. Installation
+Install dependencies for both the root project and the infrastructure definition.
+
+```bash
+# Clone the repository
+git clone [https://github.com/masterkarr/mid-world-logistics.git](https://github.com/masterkarr/mid-world-logistics.git)
+cd mid-world-logistics
+
+# Install root dependencies
+npm install
+
+# Install CDK dependencies
+cd infrastructure
+npm install
+````
+
+### 2. Deploy Stack
+Synthesize and push the CloudFormation template.
+
+```bash
+# From /infrastructure directory
+npx cdk deploy
+````
+
+### 3. Automated Verification
+Run the integrated test suite to ensure the new code does not break existing logic.
+
+```bash
+# From project root directory
+npm test
+````
+
+### 4. Live Smoke Test
+Perform a functional test against the live API to verify end-to-end connectivity.
+
+* **Procedure: Execute the command listed in SOP-001: Manual Smoke Test.**
+* **Verification: Confirm the item appears in DynamoDB and the TransportFunction logs show activity.**
