@@ -1,0 +1,86 @@
+name: Production Pipeline
+
+on:
+  push:
+    branches: ["main", "feature/*"] # Run checks on main AND feature branches
+  pull_request:
+    branches: ["main"] # Run checks on PRs targeting main
+
+jobs:
+  # ====================================================
+  # JOB 1: THE QUALITY GATE (Runs on EVERY commit)
+  # ====================================================
+  validate:
+    name: Build & Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+
+      # 1. Install & Build
+      # This confirms your TypeScript actually compiles!
+      - name: Install Dependencies
+        run: |
+          npm ci
+          cd infrastructure
+          npm ci
+      
+      # We run 'tsc' to ensure no type errors exist
+      - name: Build (Type Check)
+        run: |
+          npx tsc --noEmit
+          cd infrastructure
+          npx tsc --noEmit
+
+      # 2. Run Logic Tests
+      - name: Unit Tests (Jest)
+        run: npx jest
+
+      # 3. Run Infrastructure Tests
+      - name: Infra Tests (CDK)
+        run: |
+          cd infrastructure
+          npm test
+
+  # ====================================================
+  # JOB 2: THE DEPLOYMENT (Runs ONLY on Main)
+  # ====================================================
+  deploy:
+    name: Deploy to AWS
+    needs: validate # Wait for tests to pass
+    if: github.ref == 'refs/heads/main' # <--- THE GUARDRAIL
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+
+      - name: Install CDK Dependencies
+        run: |
+          cd infrastructure
+          npm ci
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Deploy Stack
+        run: |
+          cd infrastructure
+          npx cdk deploy --require-approval never
