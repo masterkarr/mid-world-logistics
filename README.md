@@ -1,6 +1,5 @@
 ![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/masterkarr/mid-world-logistics/pipeline.yml)
 ![GitHub top language](https://img.shields.io/github/languages/top/masterkarr/mid-world-logistics)
-![GitHub security check](https://img.shields.io/github/checks-status/masterkarr/mid-world-logistics/main)
 
 # Mid-World Logistics
 
@@ -17,6 +16,7 @@ The repository prioritizes the operational resilience and long-term maintainabil
 * **Infrastructure as Code:** All resources are defined via AWS CDK (TypeScript), enforcing a strict prohibition on manual console configuration to prevent configuration drift.
 * **Event Sourcing:** State changes are propagated via Amazon EventBridge to maintain loose coupling between the *Transport* and *Inventory* domains.
 * **Observability:** Implementation of structured logging and distributed tracing to ensure visibility into asynchronous workflows.
+* **Cost Governance:** Application of "Safety Rails" including API throttling (10 req/s) and Lambda concurrency limits to prevent "Wallet Denial of Service."
 
 ## Domain Context
 
@@ -51,24 +51,42 @@ cd infrastructure
 npm install
 ````
 
-### 2. Deploy Stack
+### 2. AWS Bootstrap (First Time Only)
+If you are deploying to a new AWS Account or Region (e.g., us-east-1) for the first time, you must initialize the CDK assets bucket. This allows CDK to store your Lambda code and CloudFormation templates.
+
+```bash
+# From the /infrastructure folder
+npx cdk bootstrap
+````
+
+### 3. Deploy Stack
 Synthesize and push the CloudFormation template.
 
 ```bash
 # From /infrastructure directory
 npx cdk deploy
 ````
+* **Note: You will be prompted to approve IAM security changes. Enter y to proceed.**
+* **Output: Upon success, the CLI will output your public ApiUrl.**
 
-### 3. Automated Verification
-Run the integrated test suite to ensure the new code does not break existing logic.
+### 4. Automated Verification
+Run the integrated test suite to confirm the system is operational.
 
 ```bash
-# From project root directory
+# Return to root directory
+cd ..
+
+# Run unit and integration tests
 npm test
 ````
 
-### 4. Live Smoke Test
-Perform a functional test against the live API to verify end-to-end connectivity.
+### 5. Live Smoke Test
+You can verify the live API using curl. Replace <YOUR_API_URL> with the ApiUrl output from Step 3.
 
 * **Procedure: Execute the command listed in SOP-001: Manual Smoke Test.**
 * **Verification: Confirm the item appears in DynamoDB and the TransportFunction logs show activity.**
+```bash
+curl -X POST <YOUR_API_URL>/cargo \
+  -H "Content-Type: application/json" \
+  -d '{"cargoId": "SMOKE-TEST-001", "location": "Thunderclap Station"}'
+````
