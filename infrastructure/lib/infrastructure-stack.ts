@@ -42,7 +42,7 @@ export class InfrastructureStack extends cdk.Stack {
       entry: path.join(__dirname, '../../src/inventory/index.ts'),
       handler: 'handler',
       tracing: lambda.Tracing.ACTIVE,
-      reservedConcurrentExecutions: 10,
+      // Note: reservedConcurrentExecutions removed - account has limited concurrency quota
       projectRoot: path.join(__dirname, '../..'),
       depsLockFilePath: path.join(__dirname, '../../package-lock.json'),
       environment: {
