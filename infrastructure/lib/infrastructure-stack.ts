@@ -103,7 +103,13 @@ export class InfrastructureStack extends cdk.Stack {
       quota: {
         limit: 1000,
         period: apigateway.Period.DAY
-      }
+      },
+      apiStages: [
+        {
+          api: api,
+          stage: api.deploymentStage,
+        }
+      ]
     });
 
     const apiKey = api.addApiKey('DeveloperKey', {
