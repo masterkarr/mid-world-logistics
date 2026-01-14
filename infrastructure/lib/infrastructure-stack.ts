@@ -43,6 +43,8 @@ export class InfrastructureStack extends cdk.Stack {
       handler: 'handler',
       tracing: lambda.Tracing.ACTIVE,
       reservedConcurrentExecutions: 10,
+      projectRoot: path.join(__dirname, '../..'),
+      depsLockFilePath: path.join(__dirname, '../../package-lock.json'),
       environment: {
         TABLE_NAME: waystationTable.tableName,
         EVENT_BUS_NAME: theBeamEventBus.eventBusName,
@@ -54,6 +56,8 @@ export class InfrastructureStack extends cdk.Stack {
       entry: path.join(__dirname, '../../src/transport/index.ts'),
       handler: 'handler',
       tracing: lambda.Tracing.ACTIVE,
+      projectRoot: path.join(__dirname, '../..'),
+      depsLockFilePath: path.join(__dirname, '../../package-lock.json'),
       environment: {
         EVENT_BUS_NAME: theBeamEventBus.eventBusName,
       },
