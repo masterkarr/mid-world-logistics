@@ -21,6 +21,9 @@
     "typescript": "~5.9.3"
   },
   "dependencies": {
+    "@aws-lambda-powertools/logger": "^2.30.2",
+    "@aws-lambda-powertools/metrics": "^2.30.2",
+    "@aws-lambda-powertools/tracer": "^2.30.2",
     "aws-cdk-lib": "^2.232.2",
     "constructs": "^10.0.0"
   }
