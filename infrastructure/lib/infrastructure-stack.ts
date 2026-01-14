@@ -39,7 +39,7 @@ export class InfrastructureStack extends cdk.Stack {
       entry: path.join(__dirname, '../../src/inventory/index.ts'),
       handler: 'handler',
       tracing: lambda.Tracing.ACTIVE,
-      reservedConcurrentExecutions: 5,
+      reservedConcurrentExecutions: 10,
       environment: {
         TABLE_NAME: waystationTable.tableName,
         EVENT_BUS_NAME: theBeamEventBus.eventBusName,
