@@ -6,10 +6,11 @@ test('MidWorld Stack Created With Correct Resources', () => {
   const app = new cdk.App();
   // WHEN
   const stack = new Infrastructure.InfrastructureStack(app, 'MyTestStack');
+  
   // THEN
   const template = Template.fromStack(stack);
 
-  // 1. Verify DynamoDB Table Definition
+  // Verify DynamoDB Table Definition
   template.hasResourceProperties('AWS::DynamoDB::Table', {
     TableName: 'mid-world-waystation',
     KeySchema: [
@@ -18,22 +19,46 @@ test('MidWorld Stack Created With Correct Resources', () => {
     ]
   });
 
-  // 2. Verify EventBus Existence
+  // Verify EventBus Existence
   template.hasResourceProperties('AWS::Events::EventBus', {
     Name: 'mid-world-logistics-bus'
   });
 
-  // 3. Verify Least Privilege (Inventory Lambda has DynamoDB Access)
-  // FIXED: Instead of checking the exact array of 10+ actions, we just check
-  // that the "Action" array *contains* the critical permission we need.
+  // Verify Least Privilege (Inventory Lambda has DynamoDB Access)
   template.hasResourceProperties('AWS::IAM::Policy', {
     PolicyDocument: {
       Statement: Match.arrayWith([
         Match.objectLike({
-          Action: Match.arrayWith(['dynamodb:PutItem']), // Only check for the write permission
+          Action: Match.arrayWith(['dynamodb:PutItem']),
           Effect: 'Allow'
         })
       ])
     }
+  });
+
+  // Verify REST API is created
+  template.hasResourceProperties('AWS::ApiGateway::RestApi', {
+    Name: 'Mid-World Public API'
+  });
+
+  // Verify Usage Plan (The Wallet Shield) exists
+  template.hasResourceProperties('AWS::ApiGateway::UsagePlan', {
+    UsagePlanName: 'FreeTier',
+    Quota: {
+      Limit: 1000,
+      Period: 'DAY'
+    },
+    Throttle: {
+      RateLimit: 10,
+      BurstLimit: 5
+    }
+  });
+
+  // Verify Method is Protected (API Key Required)
+  template.hasResourceProperties('AWS::ApiGateway::Method', {
+    HttpMethod: 'POST',
+    ResourceId: { Ref: Match.anyValue() },
+    RestApiId: { Ref: Match.anyValue() },
+    ApiKeyRequired: true // <--- CRITICAL SECURITY CHECK
   });
 });

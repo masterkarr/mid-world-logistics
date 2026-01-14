@@ -55,54 +55,12 @@ npm install
 # Install CDK dependencies
 cd infrastructure
 npm install
-````
+```
 
-### 2. AWS Bootstrap (First Time Only)
-If you are deploying to a new AWS Account or Region (e.g., us-east-1) for the first time, you must initialize the CDK assets bucket. This allows CDK to store your Lambda code and CloudFormation templates.
+### 2. Development & Operations
 
-```bash
-# From the /infrastructure folder
-npx cdk bootstrap
-````
+For all operational procedures, refer to the [Operational Runbook](./RUNBOOK.md):
 
-### 3. Deploy Stack
-Synthesize and push the CloudFormation template.
-
-```bash
-# From /infrastructure directory
-npx cdk deploy
-````
-* **Note: You will be prompted to approve IAM security changes. Enter y to proceed.**
-* **Output: Upon success, the CLI will output your public ApiUrl.**
-
-### 4. Automated Verification
-Run the integrated test suite to confirm the system is operational.
-
-```bash
-# Return to root directory
-cd ..
-
-# Run unit and integration tests
-npm test
-````
-
-### 5. Live Smoke Test
-You can verify the live API using curl. Replace <YOUR_API_URL> with the ApiUrl output from Step 3.
-
-* **Where to run:** Local Terminal (Bash/Zsh)
-* **Prerequisites:** AWS CLI installed and configured
-* **Procedure:** Execute the command listed in [SOP-001: Manual Smoke Test](./RUNBOOK.md#sop-001-manual-smoke-test).
-* **Verification:** Confirm the item appears in DynamoDB and the `TransportFunction` logs show activity.
-
-```bash
-# 1. Fetch the internal ID of the key named 'mid-world-developer-key'
-KEY_ID=$(aws apigateway get-api-keys --query "items[?name=='mid-world-developer-key'].id" --output text)
-
-# 2. Retrieve the actual Secret Value using that ID
-aws apigateway get-api-key --api-key $KEY_ID --include-value --query "value" --output text
-
-curl -X POST <YOUR_API_URL>cargo \
-  -H "Content-Type: application/json" \
-  -H "x-api-key: <YOUR_KEY_VALUE>" \
-  -d '{"cargoId": "SMOKE-TEST-001", "location": "Thunderclap Station"}'
-````
+* **[SOP-002: Developer Testing](./RUNBOOK.md#sop-002-developer-testing)** - Run unit tests and infrastructure validation locally
+* **[SOP-003: System Deployment](./RUNBOOK.md#sop-003-system-deployment)** - Deploy infrastructure and application code to AWS
+* **[SOP-001: Manual Smoke Test](./RUNBOOK.md#sop-001-manual-smoke-test)** - Verify system health after deployment`
