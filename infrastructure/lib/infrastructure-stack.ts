@@ -42,7 +42,11 @@ export class InfrastructureStack extends cdk.Stack {
       entry: path.join(__dirname, '../../src/inventory/index.ts'),
       handler: 'handler',
       tracing: lambda.Tracing.ACTIVE,
-      // Note: reservedConcurrentExecutions removed - account has limited concurrency quota
+      timeout: cdk.Duration.seconds(10),
+      memorySize: 512,
+      bundling: {
+        externalModules: [],
+      },
       projectRoot: path.join(__dirname, '../..'),
       depsLockFilePath: path.join(__dirname, '../../package-lock.json'),
       environment: {
@@ -56,6 +60,11 @@ export class InfrastructureStack extends cdk.Stack {
       entry: path.join(__dirname, '../../src/transport/index.ts'),
       handler: 'handler',
       tracing: lambda.Tracing.ACTIVE,
+      timeout: cdk.Duration.seconds(10),
+      memorySize: 512,
+      bundling: {
+        externalModules: [], // <--- Bundle everything!
+      },
       projectRoot: path.join(__dirname, '../..'),
       depsLockFilePath: path.join(__dirname, '../../package-lock.json'),
       environment: {
