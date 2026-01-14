@@ -40,23 +40,7 @@
 
 ## 🔄 Standard Operating Procedures (SOPs)
 
-### SOP-001: Manual Smoke Test
-To verify system health after a deployment:
-
-```bash
-# 1. Send a test payload (Requires API Key)
-curl -X POST <YOUR_API_URL>cargo \
-  -H "Content-Type: application/json" \
-  -H "x-api-key: <YOUR_KEY_VALUE>" \
-  -d '{"cargoId": "SMOKE-TEST-001", "location": "Thunderclap Station"}'
-
-# 2. Verify Response
-# Expected Output: {"message": "Cargo Processed", "id": "SMOKE-TEST-001"}
-
-# 3. Verify Transport
-# Check CloudWatch Logs for TransportFunction to confirm "Moving cargo..."
-````
-### SOP-002: Developer Testing
+### SOP-001: Developer Testing
 Use these commands to verify logic and infrastructure locally before opening a Pull Request.
 
 **1. Run All Logic Tests (Root)**
@@ -88,7 +72,7 @@ npx jest --config jest.config.js
 
 ---
 
-### SOP-003: System Deployment
+### SOP-002: System Deployment
 Use this procedure when deploying changes to the infrastructure or application code.
 
 **Prerequisites:**
