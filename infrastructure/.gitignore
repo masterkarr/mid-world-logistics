@@ -1,8 +1,24 @@
+# Dependencies
+node_modules/
+
+# Build Output (TypeScript)
 *.js
 !jest.config.js
 *.d.ts
-node_modules
+dist/
 
-# CDK asset staging directory
-.cdk.staging
-cdk.out
+# CDK & AWS
+cdk.out/
+.cdk.staging/
+
+# Security (CRITICAL)
+.env
+
+# Testing & Logs
+coverage/
+test-reports/
+npm-debug.log
+yarn-error.log
+
+# Misc
+.DS_Store

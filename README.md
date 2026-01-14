@@ -89,10 +89,20 @@ npm test
 ### 5. Live Smoke Test
 You can verify the live API using curl. Replace <YOUR_API_URL> with the ApiUrl output from Step 3.
 
+* **Where to run:** Local Terminal (Bash/Zsh)
+* **Prerequisites:** AWS CLI installed and configured
 * **Procedure:** Execute the command listed in [SOP-001: Manual Smoke Test](./RUNBOOK.md#sop-001-manual-smoke-test).
 * **Verification:** Confirm the item appears in DynamoDB and the `TransportFunction` logs show activity.
+
 ```bash
-curl -X POST <YOUR_API_URL>/cargo \
+# 1. Fetch the internal ID of the key named 'mid-world-developer-key'
+KEY_ID=$(aws apigateway get-api-keys --query "items[?name=='mid-world-developer-key'].id" --output text)
+
+# 2. Retrieve the actual Secret Value using that ID
+aws apigateway get-api-key --api-key $KEY_ID --include-value --query "value" --output text
+
+curl -X POST <YOUR_API_URL>cargo \
   -H "Content-Type: application/json" \
+  -H "x-api-key: <YOUR_KEY_VALUE>" \
   -d '{"cargoId": "SMOKE-TEST-001", "location": "Thunderclap Station"}'
 ````

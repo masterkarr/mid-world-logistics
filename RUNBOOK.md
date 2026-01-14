@@ -44,13 +44,14 @@
 To verify system health after a deployment:
 
 ```bash
-# 1. Send a test payload
-curl -X POST https://<YOUR_API_ID>[.execute-api.us-east-1.amazonaws.com/prod/cargo](https://.execute-api.us-east-1.amazonaws.com/prod/cargo) \
+# 1. Send a test payload (Requires API Key)
+curl -X POST <YOUR_API_URL>cargo \
   -H "Content-Type: application/json" \
+  -H "x-api-key: <YOUR_KEY_VALUE>" \
   -d '{"cargoId": "SMOKE-TEST-001", "location": "Thunderclap Station"}'
 
 # 2. Verify Response
-# Expected Output: {"message": "Cargo stored", "id": "SMOKE-TEST-001"}
+# Expected Output: {"message": "Cargo Processed", "id": "SMOKE-TEST-001"}
 
 # 3. Verify Transport
 # Check CloudWatch Logs for TransportFunction to confirm "Moving cargo..."
