@@ -1,16 +1,12 @@
 import { handler } from './index';
 
 describe('Transport Service', () => {
-  // We spy on console.log to keep the test output clean 
-  // and to verify the service is actually "reading" the data.
-  let consoleSpy: jest.SpyInstance;
-
   beforeEach(() => {
-    consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+    process.env.EVENT_BUS_NAME = 'TestBus';
   });
 
   afterEach(() => {
-    consoleSpy.mockRestore();
+    delete process.env.EVENT_BUS_NAME;
   });
 
   test('Should process CargoStored event and dispatch transport', async () => {
@@ -36,10 +32,6 @@ describe('Transport Service', () => {
       status: 'dispatched',
       cargoId: 'CARGO-999'
     });
-
-    // Verify the logic actually ran (Scanning logs)
-    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('TRANSPORT SERVICE WOKE UP'));
-    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('CARGO-999'));
   });
 
   test('Should handle missing data gracefully (Resiliency)', async () => {

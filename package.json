@@ -4,12 +4,17 @@
   "description": "**Distributed Systems R&D Sandbox**",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@aws-lambda-powertools/logger": "^2.30.2",
+    "@aws-lambda-powertools/metrics": "^2.30.2",
+    "@aws-lambda-powertools/tracer": "^2.30.2",
     "@aws-sdk/client-dynamodb": "^3.966.0",
     "@aws-sdk/client-eventbridge": "^3.966.0",
     "@aws-sdk/lib-dynamodb": "^3.966.0"

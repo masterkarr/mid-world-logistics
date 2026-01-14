@@ -135,121 +135,24 @@ aws apigateway get-api-key --api-key $KEY_ID --include-value --query "value" --o
 
 Perform a functional test against the live API to verify end-to-end connectivity.
 
-- **Procedure:** Execute the command listed in SOP-001.
+- **Procedure:** Execute the command listed in SOP-003.
 - **Verification:** Confirm the item appears in DynamoDB and the TransportFunction logs show activity.
 
 ---
 
-### SOP-004: Release Management
-
-Use this procedure to create and publish versioned releases of the system.
-
-**When to Create a Release:**
-- After merging features to `main` that change infrastructure
-- After significant application changes (new endpoints, event patterns)
-- Before planned production deployments
-- After critical bug fixes that require audit trail
-
-**Versioning Strategy:**
-
-We use [Semantic Versioning](https://semver.org/) (SemVer): `MAJOR.MINOR.PATCH`
-
-- **MAJOR** (e.g., 1.x.x → 2.0.0): Breaking changes requiring manual intervention
-  - Infrastructure changes that break existing deployments
-  - API contract changes
-  - Database schema migrations
-  
-- **MINOR** (e.g., 1.0.x → 1.1.0): New features, backwards-compatible
-  - New CloudWatch alarms
-  - New Lambda functions
-  - New API endpoints
-  - Structured logging implementation
-  
-- **PATCH** (e.g., 1.0.0 → 1.0.1): Bug fixes, documentation
-  - Lambda bug fixes
-  - Documentation updates
-  - Configuration tweaks
-
-**Step 1: Determine Version Number**
-
-Review commits since last release:
+### SOP-003: Manual Smoke Test
+To verify system health after a deployment:
 
 ```bash
-# See all tags
-git tag -l
+# 1. Send a test payload (Requires API Key)
+curl -X POST <YOUR_API_URL>cargo \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: <YOUR_KEY_VALUE>" \
+  -d '{"cargoId": "SMOKE-TEST-001", "location": "Thunderclap Station"}'
 
-# See commits since last tag
-git log $(git describe --tags --abbrev=0)..HEAD --oneline
+# 2. Verify Response
+# Expected Output: {"message": "Cargo Processed", "id": "SMOKE-TEST-001"}
 
-# Decide: MAJOR.MINOR.PATCH based on changes
+# 3. Verify Transport
+# Check CloudWatch Logs for TransportFunction to confirm "Moving cargo..."
 ```
-
-**Step 2: Create and Push Tag**
-
-```bash
-# Tag the current main branch
-git checkout main
-git pull origin main
-
-# Create annotated tag (replace X.Y.Z with your version)
-git tag -a vX.Y.Z -m "Release vX.Y.Z: Brief description of changes"
-
-# Example:
-# git tag -a v1.1.0 -m "Release v1.1.0: Add CloudWatch alarms and structured logging"
-
-# Push tag to trigger release workflow
-git push origin vX.Y.Z
-```
-
-**Step 3: Verify Release**
-
-1. **GitHub Actions:** Go to Actions tab and verify the `Release Management` workflow completes successfully
-2. **GitHub Releases:** Check the [Releases](https://github.com/masterkarr/mid-world-logistics/releases) page for the new release
-3. **Production Verification:** Run SOP-003 to verify the deployment is functional
-
-**Step 4: Update Package Version (Optional)**
-
-Update `package.json` to match the release version:
-
-```bash
-npm version X.Y.Z --no-git-tag-version
-git add package.json
-git commit -m "chore: bump version to X.Y.Z"
-git push origin main
-```
-
-**Rollback Procedure:**
-
-If a release causes production issues:
-
-1. **Identify Last Good Version:**
-   ```bash
-   git tag -l  # Find previous stable version
-   ```
-
-2. **Checkout Previous Version:**
-   ```bash
-   git checkout vX.Y.Z  # Previous stable tag
-   cd infrastructure
-   npx cdk deploy
-   ```
-
-3. **Create Hotfix:**
-   ```bash
-   git checkout -b hotfix/critical-fix
-   # Make fixes
-   git commit -m "fix: critical production issue"
-   # Merge to main and create patch release
-   ```
-
-**Release Checklist:**
-
-- [ ] All tests passing (SOP-001)
-- [ ] Infrastructure tests passing
-- [ ] RUNBOOK.md updated with any new procedures
-- [ ] ARCHITECTURE.md updated if system design changed
-- [ ] SECURITY.md reviewed for new vulnerabilities
-- [ ] Version number follows SemVer
-- [ ] Tag pushed to GitHub
-- [ ] Release workflow completed
-- [ ] Smoke test passed (SOP-003)

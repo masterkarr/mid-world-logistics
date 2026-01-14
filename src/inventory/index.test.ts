@@ -36,7 +36,7 @@ describe('Inventory Service', () => {
     const result = await handler(event);
     
     expect(result.statusCode).toBe(500);
-    expect(JSON.parse(result.body).error).toContain('Missing required fields');
+    expect(JSON.parse(result.body).error).toBe('Internal server error');
   });
 
   test('Should store item and publish event on valid input', async () => {

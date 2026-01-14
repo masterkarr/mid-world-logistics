@@ -1,32 +1,48 @@
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, PutCommand } from '@aws-sdk/lib-dynamodb';
 import { EventBridgeClient, PutEventsCommand } from '@aws-sdk/client-eventbridge';
+import { Logger } from '@aws-lambda-powertools/logger';
+import { Tracer } from '@aws-lambda-powertools/tracer';
+
+// Initialize Powertools
+const logger = new Logger({ serviceName: 'inventory-service' });
+const tracer = new Tracer({ serviceName: 'inventory-service' });
 
 // Initialize variables but don't create clients yet (Lazy Loading)
 let docClient: DynamoDBDocumentClient;
 let ebClient: EventBridgeClient;
 
 export const handler = async (event: any) => {
-  console.log('📝 INVENTORY RECEIVED:', JSON.stringify(event, null, 2));
+  logger.info('Inventory request received', { event });
 
   // 1. Initialize Clients (Lazy Pattern)
   // This ensures we pick up the Mocks and Env Vars correctly during tests/execution
   if (!docClient) {
-    const dbClient = new DynamoDBClient({});
+    const dbClient = tracer.captureAWSv3Client(new DynamoDBClient({}));
     docClient = DynamoDBDocumentClient.from(dbClient);
   }
   if (!ebClient) {
-    ebClient = new EventBridgeClient({});
+    ebClient = tracer.captureAWSv3Client(new EventBridgeClient({}));
   }
 
   // 2. Load Env Vars at Runtime (ensures freshness)
-  const TABLE_NAME = process.env.TABLE_NAME || '';
-  const EVENT_BUS_NAME = process.env.EVENT_BUS_NAME || '';
+  const TABLE_NAME = process.env.TABLE_NAME;
+  const EVENT_BUS_NAME = process.env.EVENT_BUS_NAME;
+
+  if (!TABLE_NAME) {
+    logger.error('Missing required environment variable', { variable: 'TABLE_NAME' });
+    throw new Error('TABLE_NAME environment variable is required');
+  }
+  if (!EVENT_BUS_NAME) {
+    logger.error('Missing required environment variable', { variable: 'EVENT_BUS_NAME' });
+    throw new Error('EVENT_BUS_NAME environment variable is required');
+  }
 
   try {
     const body = typeof event.body === 'string' ? JSON.parse(event.body) : event;
     
     if (!body.cargoId || !body.location) {
+      logger.warn('Invalid request - missing required fields', { body });
       throw new Error('Missing required fields: cargoId or location');
     }
 
@@ -44,7 +60,7 @@ export const handler = async (event: any) => {
       TableName: TABLE_NAME,
       Item: item,
     }));
-    console.log(`DB WRITE SUCCESS: ${body.cargoId}`);
+    logger.info('DynamoDB write successful', { cargoId: body.cargoId, tableName: TABLE_NAME });
 
     // 4. The Publish
     const eventPayload = {
@@ -57,8 +73,11 @@ export const handler = async (event: any) => {
     await ebClient.send(new PutEventsCommand({
         Entries: [eventPayload]
     }));
-    // Add this log to help debug if it fails again
-    console.log(`EVENT PUBLISHED: CargoStored to bus ${EVENT_BUS_NAME}`);
+    logger.info('Event published to EventBridge', { 
+      cargoId: body.cargoId, 
+      eventBusName: EVENT_BUS_NAME,
+      eventType: 'CargoStored'
+    });
 
     return {
       statusCode: 200,
@@ -66,10 +85,10 @@ export const handler = async (event: any) => {
     };
 
   } catch (error: any) {
-    console.error('ERROR:', error);
+    logger.error('Error processing cargo', { error: error.message, stack: error.stack });
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: error.message }),
+      body: JSON.stringify({ error: 'Internal server error' }),
     };
   }
 };

@@ -6,6 +6,9 @@ import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as nodejs from 'aws-cdk-lib/aws-lambda-nodejs';
 import * as sqs from 'aws-cdk-lib/aws-sqs';
 import * as apigateway from 'aws-cdk-lib/aws-apigateway';
+import * as cloudwatch from 'aws-cdk-lib/aws-cloudwatch';
+import * as cloudwatch_actions from 'aws-cdk-lib/aws-cloudwatch-actions';
+import * as sns from 'aws-cdk-lib/aws-sns';
 import * as path from 'path';
 import { Construct } from 'constructs';
 
@@ -105,6 +108,96 @@ export class InfrastructureStack extends cdk.Stack {
 
     plan.addApiKey(apiKey);
     
+    // ====================================================
+    // OBSERVABILITY: CloudWatch Alarms & Monitoring
+    // ====================================================
+    
+    // SNS Topic for Alarm Notifications
+    const alarmTopic = new sns.Topic(this, 'AlarmTopic', {
+      topicName: 'mid-world-alarms',
+      displayName: 'Mid-World Logistics System Alarms',
+    });
+
+    // Alarm 1: API Gateway 5xx Errors (SEV-1)
+    const apiErrorAlarm = new cloudwatch.Alarm(this, 'ApiErrorAlarm', {
+      alarmName: 'mid-world-api-5xx-errors',
+      alarmDescription: 'API Gateway is returning 5xx errors - SEV-1 Incident',
+      metric: api.metricServerError({
+        statistic: 'Sum',
+        period: cdk.Duration.minutes(1),
+      }),
+      threshold: 1,
+      evaluationPeriods: 1,
+      comparisonOperator: cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+      treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+    });
+    apiErrorAlarm.addAlarmAction(new cloudwatch_actions.SnsAction(alarmTopic));
+
+    // Alarm 2: Dead Letter Queue Depth (SEV-2)
+    const dlqAlarm = new cloudwatch.Alarm(this, 'DLQAlarm', {
+      alarmName: 'mid-world-transport-dlq-depth',
+      alarmDescription: 'Messages in DLQ - Transport function failures - SEV-2 Incident',
+      metric: deadLetterQueue.metricApproximateNumberOfMessagesVisible({
+        statistic: 'Maximum',
+        period: cdk.Duration.minutes(1),
+      }),
+      threshold: 1,
+      evaluationPeriods: 1,
+      comparisonOperator: cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+      treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+    });
+    dlqAlarm.addAlarmAction(new cloudwatch_actions.SnsAction(alarmTopic));
+
+    // Alarm 3: Inventory Lambda Errors
+    const inventoryErrorAlarm = new cloudwatch.Alarm(this, 'InventoryErrorAlarm', {
+      alarmName: 'mid-world-inventory-errors',
+      alarmDescription: 'Inventory Lambda function errors detected',
+      metric: inventoryFunction.metricErrors({
+        statistic: 'Sum',
+        period: cdk.Duration.minutes(5),
+      }),
+      threshold: 3,
+      evaluationPeriods: 1,
+      comparisonOperator: cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+      treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+    });
+    inventoryErrorAlarm.addAlarmAction(new cloudwatch_actions.SnsAction(alarmTopic));
+
+    // Alarm 4: Transport Lambda Errors
+    const transportErrorAlarm = new cloudwatch.Alarm(this, 'TransportErrorAlarm', {
+      alarmName: 'mid-world-transport-errors',
+      alarmDescription: 'Transport Lambda function errors detected',
+      metric: transportFunction.metricErrors({
+        statistic: 'Sum',
+        period: cdk.Duration.minutes(5),
+      }),
+      threshold: 3,
+      evaluationPeriods: 1,
+      comparisonOperator: cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+      treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+    });
+    transportErrorAlarm.addAlarmAction(new cloudwatch_actions.SnsAction(alarmTopic));
+
+    // Alarm 5: API Latency (SEV-3)
+    const apiLatencyAlarm = new cloudwatch.Alarm(this, 'ApiLatencyAlarm', {
+      alarmName: 'mid-world-api-high-latency',
+      alarmDescription: 'API Gateway latency above 2 seconds - SEV-3 Performance Degradation',
+      metric: api.metricLatency({
+        statistic: 'Average',
+        period: cdk.Duration.minutes(5),
+      }),
+      threshold: 2000, // 2 seconds in milliseconds
+      evaluationPeriods: 2,
+      comparisonOperator: cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+      treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+    });
+    apiLatencyAlarm.addAlarmAction(new cloudwatch_actions.SnsAction(alarmTopic));
+    
+    // Outputs
     new cdk.CfnOutput(this, 'ApiUrl', { value: api.url });
+    new cdk.CfnOutput(this, 'AlarmTopicArn', { 
+      value: alarmTopic.topicArn,
+      description: 'Subscribe to this SNS topic to receive alarm notifications',
+    });
   }
 }

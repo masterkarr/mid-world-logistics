@@ -61,6 +61,6 @@ npm install
 
 For all operational procedures, refer to the [Operational Runbook](./RUNBOOK.md):
 
-* **[SOP-002: Developer Testing](./RUNBOOK.md#sop-002-developer-testing)** - Run unit tests and infrastructure validation locally
-* **[SOP-003: System Deployment](./RUNBOOK.md#sop-003-system-deployment)** - Deploy infrastructure and application code to AWS
-* **[SOP-001: Manual Smoke Test](./RUNBOOK.md#sop-001-manual-smoke-test)** - Verify system health after deployment`
+* **[SOP-001: Developer Testing](./RUNBOOK.md#sop-001-developer-testing)** - Run unit tests and infrastructure validation locally
+* **[SOP-002: System Deployment](./RUNBOOK.md#sop-002-system-deployment)** - Deploy infrastructure and application code to AWS
+* **[SOP-003: Manual Smoke Test](./RUNBOOK.md#sop-003-manual-smoke-test)** - Verify system health after deployment
